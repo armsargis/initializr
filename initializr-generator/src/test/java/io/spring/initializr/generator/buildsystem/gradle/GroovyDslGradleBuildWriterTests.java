@@ -60,13 +60,28 @@ class GroovyDslGradleBuildWriterTests {
 	@Test
 	void gradleBuildWithBuildscriptDependency() {
 		GradleBuild build = new GradleBuild();
-		build.repositories().add("maven-central");
-		build.buildscript((buildscript) -> buildscript
-				.dependency("org.springframework.boot:spring-boot-gradle-plugin:2.1.0.RELEASE"));
+		build.buildscript((buildscript) -> {
+			buildscript.repositories().add("maven-central");
+			buildscript.dependency("org.springframework.boot:spring-boot-gradle-plugin:2.1.0.RELEASE");
+		});
 		List<String> lines = generateBuild(build);
 		assertThat(lines).containsSequence("buildscript {", "    repositories {", "        mavenCentral()", "    }",
 				"    dependencies {",
 				"        classpath 'org.springframework.boot:spring-boot-gradle-plugin:2.1.0.RELEASE'", "    }", "}");
+	}
+
+	@Test
+	void gradleBuildWithBuildscriptRepositoryCredentials() {
+		GradleBuild build = new GradleBuild();
+		build.buildscript((buildscript) -> buildscript.repositories()
+				.add(MavenRepository.withIdAndUrl("secured-repository", "https://secured.spring.io")
+						.credentials("\"$wfRepoUsername\"", "\"$wfRepoPassword\"")));
+		List<String> lines = generateBuild(build);
+		assertThat(lines).containsSequence("buildscript {", "    repositories {", "        maven {",
+				"            url 'https://secured.spring.io'", "            credentials {",
+				"                username \"$wfRepoUsername\"", "                password \"$wfRepoPassword\"",
+				"            }", "        }", "    }", "}");
+
 	}
 
 	@Test
@@ -116,8 +131,8 @@ class GroovyDslGradleBuildWriterTests {
 		GradleBuild build = new GradleBuild();
 		build.repositories().add(MavenRepository.withIdAndUrl("spring-milestones", "https://repo.spring.io/milestone"));
 		List<String> lines = generateBuild(build);
-		assertThat(lines).containsSequence("repositories {", "    maven { url 'https://repo.spring.io/milestone' }",
-				"}");
+		assertThat(lines).containsSequence("repositories {", "    maven {",
+				"        url 'https://repo.spring.io/milestone'", "    }", "}");
 	}
 
 	@Test
@@ -126,8 +141,8 @@ class GroovyDslGradleBuildWriterTests {
 		build.repositories().add(MavenRepository.withIdAndUrl("spring-snapshots", "https://repo.spring.io/snapshot")
 				.snapshotsEnabled(true));
 		List<String> lines = generateBuild(build);
-		assertThat(lines).containsSequence("repositories {", "    maven { url 'https://repo.spring.io/snapshot' }",
-				"}");
+		assertThat(lines).containsSequence("repositories {", "    maven {",
+				"        url 'https://repo.spring.io/snapshot'", "    }", "}");
 	}
 
 	@Test

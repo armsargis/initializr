@@ -29,9 +29,9 @@ import java.util.stream.Stream;
  */
 public class BuildItemContainer<I, V> {
 
-	private final Map<I, V> items;
+	protected final Map<I, V> items;
 
-	private final Function<I, V> itemResolver;
+	protected final Function<I, V> itemResolver;
 
 	protected BuildItemContainer(Map<I, V> items, Function<I, V> itemResolver) {
 		this.items = items;

@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -36,6 +37,7 @@ import io.spring.initializr.generator.buildsystem.DependencyComparator;
 import io.spring.initializr.generator.buildsystem.DependencyContainer;
 import io.spring.initializr.generator.buildsystem.DependencyScope;
 import io.spring.initializr.generator.buildsystem.MavenRepository;
+import io.spring.initializr.generator.buildsystem.MavenRepositoryContainer;
 import io.spring.initializr.generator.buildsystem.PropertyContainer;
 import io.spring.initializr.generator.io.IndentingWriter;
 import io.spring.initializr.generator.version.VersionProperty;
@@ -67,7 +69,7 @@ public abstract class GradleBuildWriter {
 		writeJavaSourceCompatibility(writer, settings);
 		writer.println();
 		writeConfigurations(writer, build.configurations());
-		writeRepositories(writer, build);
+		writeRepositories(writer, build.repositories());
 		writeProperties(writer, build.properties());
 		writeDependencies(writer, build);
 		writeBoms(writer, build);
@@ -95,12 +97,12 @@ public abstract class GradleBuildWriter {
 
 	protected abstract void writeConfigurations(IndentingWriter writer, GradleConfigurationContainer configurations);
 
-	protected final void writeRepositories(IndentingWriter writer, GradleBuild build) {
-		writeNestedCollection(writer, "repositories", build.repositories().items().collect(Collectors.toList()),
-				this::repositoryAsString);
+	protected final void writeRepositories(IndentingWriter writer, MavenRepositoryContainer repositories) {
+		writeNestedCollection(writer, "repositories", repositories.items().collect(Collectors.toList()),
+				this::writeRepository);
 	}
 
-	protected abstract String repositoryAsString(MavenRepository repository);
+	protected abstract void writeRepository(IndentingWriter writer, MavenRepository repository);
 
 	private void writeProperties(IndentingWriter writer, PropertyContainer properties) {
 		if (properties.isEmpty()) {
@@ -209,6 +211,16 @@ public abstract class GradleBuildWriter {
 	}
 
 	protected final <T> void writeNestedCollection(IndentingWriter writer, String name, Collection<T> collection,
+			BiConsumer<IndentingWriter, T> writerConsumer) {
+		if (!collection.isEmpty()) {
+			writer.println(name + " {");
+			writer.indented(() -> writeCollection(writer, collection, writerConsumer));
+			writer.println("}");
+
+		}
+	}
+
+	protected final <T> void writeNestedCollection(IndentingWriter writer, String name, Collection<T> collection,
 			Function<T, String> converter, Runnable beforeWriting) {
 		if (!collection.isEmpty()) {
 			if (beforeWriting != null) {
@@ -218,6 +230,13 @@ public abstract class GradleBuildWriter {
 			writer.indented(() -> writeCollection(writer, collection, converter));
 			writer.println("}");
 
+		}
+	}
+
+	protected final <T> void writeCollection(IndentingWriter writer, Collection<T> collection,
+			BiConsumer<IndentingWriter, T> writerConsumer) {
+		if (!collection.isEmpty()) {
+			collection.forEach((it) -> writerConsumer.accept(writer, it));
 		}
 	}
 

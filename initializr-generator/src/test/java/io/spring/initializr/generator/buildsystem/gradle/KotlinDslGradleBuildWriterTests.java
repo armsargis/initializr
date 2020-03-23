@@ -119,7 +119,7 @@ class KotlinDslGradleBuildWriterTests {
 		GradleBuild build = new GradleBuild();
 		build.repositories().add("maven-central");
 		List<String> lines = generateBuild(build);
-		assertThat(lines).containsSequence("repositories {", "    mavenCentral()", "}");
+		assertThat(lines).containsSequence("" + "repositories {", "    mavenCentral()", "}");
 	}
 
 	@Test
@@ -127,8 +127,8 @@ class KotlinDslGradleBuildWriterTests {
 		GradleBuild build = new GradleBuild();
 		build.repositories().add(MavenRepository.withIdAndUrl("spring-milestones", "https://repo.spring.io/milestone"));
 		List<String> lines = generateBuild(build);
-		assertThat(lines).containsSequence("repositories {",
-				"    maven { url = uri(\"https://repo.spring.io/milestone\") }", "}");
+		assertThat(lines).containsSequence("repositories {", "    maven {",
+				"        url = uri(\"https://repo.spring.io/milestone\")", "    }", "}");
 	}
 
 	@Test
@@ -137,8 +137,8 @@ class KotlinDslGradleBuildWriterTests {
 		build.repositories().add(MavenRepository.withIdAndUrl("spring-snapshots", "https://repo.spring.io/snapshot")
 				.snapshotsEnabled(true));
 		List<String> lines = generateBuild(build);
-		assertThat(lines).containsSequence("repositories {",
-				"    maven { url = uri(\"https://repo.spring.io/snapshot\") }", "}");
+		assertThat(lines).containsSequence("repositories {", "    maven {",
+				"        url = uri(\"https://repo.spring.io/snapshot\")", "    }", "}");
 	}
 
 	@Test

@@ -38,14 +38,11 @@ public class GradleBuild extends Build {
 
 	private final GradleTaskContainer tasks = new GradleTaskContainer();
 
-	private final GradleBuildscript.Builder buildscript = new GradleBuildscript.Builder();
+	private final GradleBuildscript.Builder buildscript;
 
-	/**
-	 * Create a new Gradle build using the specified {@link BuildItemResolver}.
-	 * @param buildItemResolver the build item resolved to use
-	 */
 	public GradleBuild(BuildItemResolver buildItemResolver) {
 		super(buildItemResolver);
+		this.buildscript = new GradleBuildscript.Builder(newMavenRepositoryContainer(buildItemResolver));
 	}
 
 	/**

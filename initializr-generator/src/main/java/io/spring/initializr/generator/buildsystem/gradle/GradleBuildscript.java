@@ -22,6 +22,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import io.spring.initializr.generator.buildsystem.MavenRepositoryContainer;
+
 /**
  * {@code buildscript} section of a {@link GradleBuild}.
  *
@@ -29,13 +31,20 @@ import java.util.Map;
  */
 public class GradleBuildscript {
 
+	private final MavenRepositoryContainer repositories;
+
 	private final List<String> dependencies;
 
 	private final Map<String, String> ext;
 
 	protected GradleBuildscript(Builder builder) {
+		this.repositories = builder.repositories.createCopy();
 		this.dependencies = Collections.unmodifiableList(new ArrayList<>(builder.dependencies));
 		this.ext = Collections.unmodifiableMap(new LinkedHashMap<>(builder.ext));
+	}
+
+	public MavenRepositoryContainer getRepositories() {
+		return this.repositories;
 	}
 
 	/**
@@ -59,13 +68,28 @@ public class GradleBuildscript {
 	 */
 	public static class Builder {
 
+		private final MavenRepositoryContainer repositories;
+
 		private final List<String> dependencies = new ArrayList<>();
 
 		private final Map<String, String> ext = new LinkedHashMap<>();
 
+		public Builder(MavenRepositoryContainer repositories) {
+			this.repositories = repositories;
+		}
+
 		public Builder dependency(String coordinates) {
 			this.dependencies.add(coordinates);
 			return this;
+		}
+
+		/**
+		 * Return the {@linkplain MavenRepositoryContainer repository container} to use to
+		 * configure repositories.
+		 * @return the {@link MavenRepositoryContainer} for repositories
+		 */
+		public MavenRepositoryContainer repositories() {
+			return this.repositories;
 		}
 
 		/**

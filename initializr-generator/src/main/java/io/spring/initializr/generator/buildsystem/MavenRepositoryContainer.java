@@ -17,6 +17,7 @@
 package io.spring.initializr.generator.buildsystem;
 
 import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.function.Function;
 
 /**
@@ -29,6 +30,11 @@ public class MavenRepositoryContainer extends BuildItemContainer<String, MavenRe
 
 	MavenRepositoryContainer(Function<String, MavenRepository> itemResolver) {
 		super(new LinkedHashMap<>(), itemResolver);
+	}
+
+	public MavenRepositoryContainer(Map<String, MavenRepository> items,
+			Function<String, MavenRepository> itemResolver) {
+		super(items, itemResolver);
 	}
 
 	/**
@@ -46,6 +52,10 @@ public class MavenRepositoryContainer extends BuildItemContainer<String, MavenRe
 	 */
 	public void add(MavenRepository.Builder builder) {
 		add(builder.build());
+	}
+
+	public MavenRepositoryContainer createCopy() {
+		return new MavenRepositoryContainer(items, itemResolver);
 	}
 
 }

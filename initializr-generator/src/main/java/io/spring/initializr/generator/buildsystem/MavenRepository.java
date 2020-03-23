@@ -35,12 +35,15 @@ public class MavenRepository {
 
 	private final String url;
 
+	private final Credentials credentials;
+
 	private final boolean snapshotsEnabled;
 
 	protected MavenRepository(Builder builder) {
 		this.id = builder.id;
 		this.name = builder.name;
 		this.url = builder.url;
+		this.credentials = builder.credentials;
 		this.snapshotsEnabled = builder.snapshotsEnabled;
 	}
 
@@ -79,6 +82,10 @@ public class MavenRepository {
 		return this.url;
 	}
 
+	public Credentials getCredentials() {
+		return this.credentials;
+	}
+
 	/**
 	 * Return whether snapshots are enabled on the repository.
 	 * @return {@code true} to enable snapshots, {@code false} otherwise
@@ -96,6 +103,8 @@ public class MavenRepository {
 		private String url;
 
 		private boolean snapshotsEnabled;
+
+		private Credentials credentials;
 
 		public Builder(String id, String url) {
 			this.id = id;
@@ -133,6 +142,11 @@ public class MavenRepository {
 			return this;
 		}
 
+		public Builder credentials(String username, String password) {
+			this.credentials = new Credentials(username, password);
+			return this;
+		}
+
 		/**
 		 * Specify whether snapshots are enabled.
 		 * @param snapshotsEnabled whether snapshots are served by the repository
@@ -149,6 +163,32 @@ public class MavenRepository {
 		 */
 		public MavenRepository build() {
 			return new MavenRepository(this);
+		}
+
+	}
+
+	public static class Credentials {
+
+		private final String username;
+
+		private final String password;
+
+		public Credentials(String username, String password) {
+			this.username = username;
+			this.password = password;
+		}
+
+		public String getUsername() {
+			return this.username;
+		}
+
+		public String getPassword() {
+			return this.password;
+		}
+
+		@Override
+		public String toString() {
+			return "Credentials{" + "username='" + this.username + '\'' + ", password=*****" + '}';
 		}
 
 	}

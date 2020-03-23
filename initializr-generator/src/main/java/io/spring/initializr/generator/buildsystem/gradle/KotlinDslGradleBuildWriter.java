@@ -109,11 +109,30 @@ public class KotlinDslGradleBuildWriter extends GradleBuildWriter {
 	}
 
 	@Override
-	protected String repositoryAsString(MavenRepository repository) {
+	protected void writeRepository(IndentingWriter writer, MavenRepository repository) {
 		if (MavenRepository.MAVEN_CENTRAL.equals(repository)) {
-			return "mavenCentral()";
+			writer.println("mavenCentral()");
+			return;
 		}
-		return "maven { url = uri(\"" + repository.getUrl() + "\") }";
+
+		writer.println("maven {");
+		writer.indented(() -> {
+			writer.println("url = uri(\"" + repository.getUrl() + "\")");
+			MavenRepository.Credentials credentials = repository.getCredentials();
+			if (credentials != null) {
+				writeCredentials(writer, credentials);
+			}
+		});
+		writer.println("}");
+	}
+
+	private void writeCredentials(IndentingWriter writer, MavenRepository.Credentials credentials) {
+		writer.println("credentials {");
+		writer.indented(() -> {
+			writer.println("username = " + credentials.getUsername());
+			writer.println("password = " + credentials.getPassword());
+		});
+		writer.println("}");
 	}
 
 	@Override

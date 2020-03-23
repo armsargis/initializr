@@ -16,6 +16,7 @@
 
 package io.spring.initializr.generator.buildsystem.gradle;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
@@ -25,6 +26,7 @@ import io.spring.initializr.generator.buildsystem.BillOfMaterials;
 import io.spring.initializr.generator.buildsystem.Dependency;
 import io.spring.initializr.generator.buildsystem.Dependency.Exclusion;
 import io.spring.initializr.generator.buildsystem.MavenRepository;
+import io.spring.initializr.generator.buildsystem.MavenRepositoryContainer;
 import io.spring.initializr.generator.io.IndentingWriter;
 import io.spring.initializr.generator.version.VersionProperty;
 import io.spring.initializr.generator.version.VersionReference;
@@ -40,7 +42,8 @@ public class GroovyDslGradleBuildWriter extends GradleBuildWriter {
 	protected void writeBuildscript(IndentingWriter writer, GradleBuild build) {
 		List<String> dependencies = build.getBuildscript().getDependencies();
 		Map<String, String> ext = build.getBuildscript().getExt();
-		if (dependencies.isEmpty() && ext.isEmpty()) {
+		MavenRepositoryContainer repositories = build.getBuildscript().getRepositories();
+		if (dependencies.isEmpty() && ext.isEmpty() && repositories.isEmpty()) {
 			return;
 		}
 		writer.println("buildscript {");
@@ -58,7 +61,7 @@ public class GroovyDslGradleBuildWriter extends GradleBuildWriter {
 	}
 
 	private void writeBuildscriptRepositories(IndentingWriter writer, GradleBuild build) {
-		writeRepositories(writer, build);
+		writeRepositories(writer, build.getBuildscript().getRepositories());
 	}
 
 	private void writeBuildscriptDependencies(IndentingWriter writer, GradleBuild build) {
@@ -92,11 +95,29 @@ public class GroovyDslGradleBuildWriter extends GradleBuildWriter {
 	}
 
 	@Override
-	protected String repositoryAsString(MavenRepository repository) {
+	protected void writeRepository(IndentingWriter writer, MavenRepository repository) {
 		if (MavenRepository.MAVEN_CENTRAL.equals(repository)) {
-			return "mavenCentral()";
+			writer.println("mavenCentral()");
+			return;
 		}
-		return "maven { url '" + repository.getUrl() + "' }";
+
+		writer.println("maven {");
+		writer.indented(() -> {
+			writer.println("url '" + repository.getUrl() + "'");
+			MavenRepository.Credentials credentials = repository.getCredentials();
+			if (credentials != null) {
+				writeCredentials(writer, credentials);
+			}
+		});
+		writer.println("}");
+	}
+
+	private void writeCredentials(IndentingWriter writer, MavenRepository.Credentials credentials) {
+		Map<String, String> map = new LinkedHashMap<>();
+		map.put("username", credentials.getUsername());
+		map.put("password", credentials.getPassword());
+
+		writeNestedMap(writer, "credentials", map, (key, value) -> key + " " + value);
 	}
 
 	@Override

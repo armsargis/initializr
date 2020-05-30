@@ -110,6 +110,15 @@ public class GradleTaskContainer {
 	}
 
 	/**
+	 * Customize a task extension with the specified name.
+	 * @param name the name of a task
+	 * @param task a callback to customize the task
+	 */
+	public void extension(String name, Consumer<Builder> task) {
+		task.accept(this.tasks.computeIfAbsent(name, (taskName) -> new Builder(taskName, true)));
+	}
+
+	/**
 	 * Remove the task with the specified {@code name}.
 	 * @param name the name of the task
 	 * @return {@code true} if such a task was registered, {@code false} otherwise

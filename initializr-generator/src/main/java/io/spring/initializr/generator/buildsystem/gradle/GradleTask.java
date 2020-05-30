@@ -35,6 +35,8 @@ public class GradleTask {
 
 	private final String type;
 
+	private final boolean extension;
+
 	private final Map<String, String> attributes;
 
 	private final List<Invocation> invocations;
@@ -44,6 +46,7 @@ public class GradleTask {
 	protected GradleTask(Builder builder) {
 		this.name = builder.name;
 		this.type = builder.type;
+		this.extension = builder.extension;
 		this.attributes = Collections.unmodifiableMap(new LinkedHashMap<>(builder.attributes));
 		this.invocations = Collections.unmodifiableList(new ArrayList<>(builder.invocations));
 		this.nested = Collections.unmodifiableMap(resolve(builder.nested));
@@ -70,6 +73,14 @@ public class GradleTask {
 	 */
 	public String getType() {
 		return this.type;
+	}
+
+	/**
+	 * Return extension type for this task.
+	 * @return true if task is extension
+	 */
+	public boolean isExtension() {
+		return this.extension;
 	}
 
 	/**
@@ -105,26 +116,32 @@ public class GradleTask {
 
 		private final String type;
 
+		private final boolean extension;
+
 		private final Map<String, String> attributes = new LinkedHashMap<>();
 
 		private final List<Invocation> invocations = new ArrayList<>();
 
 		private final Map<String, Builder> nested = new LinkedHashMap<>();
 
+		protected Builder(String name) {
+			this(name, null, false);
+		}
+
+		protected Builder(String name, boolean extension) {
+			this(name, null, extension);
+		}
+
 		protected Builder(String name, String type) {
+			this(name, type, false);
+		}
+
+		protected Builder(String name, String type, boolean extension) {
 			this.name = name;
 			this.type = type;
+			this.extension = extension;
 		}
 
-		protected Builder(String name) {
-			this(name, null);
-		}
-
-		/**
-		 * Add a task attribute.
-		 * @param target the name of the attribute
-		 * @param value the value
-		 */
 		public void attribute(String target, String value) {
 			this.attributes.put(target, value);
 		}

@@ -31,7 +31,6 @@ import io.spring.initializr.generator.version.VersionReference;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
 
 /**
  * Tests for {@link KotlinDslGradleBuildWriter}
@@ -67,16 +66,24 @@ class KotlinDslGradleBuildWriterTests {
 	@Test
 	void gradleBuildWithBuildscriptDependency() {
 		GradleBuild build = new GradleBuild();
+		build.settings().sourceCompatibility("11");
 		build.buildscript((buildscript) -> buildscript
 				.dependency("org.springframework.boot:spring-boot-gradle-plugin:2.1.0.RELEASE"));
-		assertThatIllegalStateException().isThrownBy(() -> generateBuild(build));
+		List<String> lines = generateBuild(build);
+		assertThat(lines).containsSequence("buildscript {", "    dependencies {",
+				"        classpath(\"org.springframework.boot:spring-boot-gradle-plugin:2.1.0.RELEASE\")", "    }", "}",
+				"", "", "version = \"0.0.1-SNAPSHOT\"", "java.sourceCompatibility = JavaVersion.VERSION_11");
 	}
 
 	@Test
 	void gradleBuildWithBuildscriptExtProperty() {
 		GradleBuild build = new GradleBuild();
-		build.buildscript((buildscript) -> buildscript.ext("kotlinVersion", "\1.2.51\""));
-		assertThatIllegalStateException().isThrownBy(() -> generateBuild(build));
+		build.settings().sourceCompatibility("11");
+		build.buildscript((buildscript) -> buildscript.ext("kotlinVersion", "1.2.51"));
+		List<String> lines = generateBuild(build);
+		assertThat(lines).containsSequence("buildscript {", "    extra.apply {",
+				"        set(\"kotlinVersion\", \"1.2.51\")", "    }", "}", "", "", "version = \"0.0.1-SNAPSHOT\"",
+				"java.sourceCompatibility = JavaVersion.VERSION_11");
 	}
 
 	@Test
@@ -110,8 +117,11 @@ class KotlinDslGradleBuildWriterTests {
 	@Test
 	void gradleBuildWithApplyPlugin() {
 		GradleBuild build = new GradleBuild();
+		build.settings().sourceCompatibility("11");
 		build.plugins().apply("io.spring.dependency-management");
-		assertThatIllegalStateException().isThrownBy(() -> generateBuild(build));
+		List<String> lines = generateBuild(build);
+		assertThat(lines).containsSequence("", "", "apply(plugin=\"io.spring.dependency-management\")", "",
+				"version = \"0.0.1-SNAPSHOT\"", "java.sourceCompatibility = JavaVersion.VERSION_11");
 	}
 
 	@Test

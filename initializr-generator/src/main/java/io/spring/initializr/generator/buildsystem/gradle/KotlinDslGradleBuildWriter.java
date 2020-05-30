@@ -27,6 +27,7 @@ import io.spring.initializr.generator.buildsystem.BillOfMaterials;
 import io.spring.initializr.generator.buildsystem.Dependency;
 import io.spring.initializr.generator.buildsystem.Dependency.Exclusion;
 import io.spring.initializr.generator.buildsystem.MavenRepository;
+import io.spring.initializr.generator.buildsystem.MavenRepositoryContainer;
 import io.spring.initializr.generator.io.IndentingWriter;
 import io.spring.initializr.generator.version.VersionProperty;
 import io.spring.initializr.generator.version.VersionReference;
@@ -56,8 +57,37 @@ public class KotlinDslGradleBuildWriter extends GradleBuildWriter {
 
 	@Override
 	protected void writeBuildscript(IndentingWriter writer, GradleBuild build) {
-		if (!(build.getBuildscript().getDependencies().isEmpty() && build.getBuildscript().getExt().isEmpty())) {
-			throw new IllegalStateException("build.gradle.kts scripts shouldn't need a buildscript");
+		List<String> dependencies = build.getBuildscript().getDependencies();
+		Map<String, String> ext = build.getBuildscript().getExt();
+		MavenRepositoryContainer repositories = build.getBuildscript().getRepositories();
+		if (dependencies.isEmpty() && ext.isEmpty() && repositories.isEmpty()) {
+			return;
+		}
+		writer.println("buildscript {");
+		writer.indented(() -> {
+			writeBuildscriptExt(writer, build);
+			writeBuildscriptRepositories(writer, build);
+			writeBuildscriptDependencies(writer, build);
+		});
+		writer.println("}");
+		writer.println();
+	}
+
+	private void writeBuildscriptRepositories(IndentingWriter writer, GradleBuild build) {
+		writeRepositories(writer, build.getBuildscript().getRepositories());
+	}
+
+	private void writeBuildscriptDependencies(IndentingWriter writer, GradleBuild build) {
+		writeNestedCollection(writer, "dependencies", build.getBuildscript().getDependencies(),
+				(dependency) -> "classpath(\"" + dependency + "\")");
+	}
+
+	private void writeBuildscriptExt(IndentingWriter writer, GradleBuild build) {
+		if (!build.getBuildscript().getExt().isEmpty()) {
+			writer.println("extra.apply {");
+			writer.indented(() -> build.getBuildscript().getExt()
+					.forEach((key, value) -> writer.println(String.format("set(\"%s\", \"%s\")", key, value))));
+			writer.println("}");
 		}
 	}
 
@@ -66,9 +96,14 @@ public class KotlinDslGradleBuildWriter extends GradleBuildWriter {
 		writeNestedCollection(writer, "plugins", extractStandardPlugin(build), this::pluginAsString, null);
 		writer.println();
 		if (build.plugins().values().anyMatch(GradlePlugin::isApply)) {
-			throw new IllegalStateException(
-					"build.gradle.kts scripts shouldn't apply plugins. They should use the plugins block instead.");
+			writeCollection(writer, extractApplyPlugins(build), (plugin) -> "apply(plugin=\"" + plugin.getId() + "\")",
+					writer::println);
+			writer.println();
 		}
+	}
+
+	private List<GradlePlugin> extractApplyPlugins(GradleBuild build) {
+		return build.plugins().values().filter(GradlePlugin::isApply).collect(Collectors.toList());
 	}
 
 	private String pluginAsString(StandardGradlePlugin plugin) {
@@ -218,18 +253,32 @@ public class KotlinDslGradleBuildWriter extends GradleBuildWriter {
 
 	@Override
 	protected void writeTasks(IndentingWriter writer, GradleTaskContainer tasks) {
-		tasks.values().filter((candidate) -> candidate.getType() != null).forEach((task) -> {
+		tasks.values().filter(KotlinDslGradleBuildWriter::isTypedTask).forEach((task) -> {
 			writer.println();
 			writer.println("tasks.withType<" + task.getName() + "> {");
 			writer.indented(() -> writeTaskCustomization(writer, task));
 			writer.println("}");
 		});
-		tasks.values().filter((candidate) -> candidate.getType() == null).forEach((task) -> {
+		tasks.values().filter(KotlinDslGradleBuildWriter::isTask).forEach((task) -> {
 			writer.println();
 			writer.println("tasks." + task.getName() + " {");
 			writer.indented(() -> writeTaskCustomization(writer, task));
 			writer.println("}");
 		});
+		tasks.values().filter(GradleTask::isExtension).forEach((task) -> {
+			writer.println();
+			writer.println(task.getName() + " {");
+			writer.indented(() -> writeTaskCustomization(writer, task));
+			writer.println("}");
+		});
+	}
+
+	private static boolean isTask(GradleTask candidate) {
+		return candidate.getType() == null && !candidate.isExtension();
+	}
+
+	private static boolean isTypedTask(GradleTask candidate) {
+		return candidate.getType() != null && !candidate.isExtension();
 	}
 
 	@Override
